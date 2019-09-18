@@ -1,0 +1,34 @@
+Java 代理设计模式
+实现方式：
+1. 静态代理；
+2. 动态代理（包含两种方法：a. 不封装获取代理对象；b. 封装代理对象）
+
+一、静态代理设计模式
+	1. 代理类实现和被代理类同样的接口（需要代理的职责/方法的接口）；
+	2. 在代理类中通过组合关系引用被代理类（将被代理类作为成员变量，并且在代理类的构造方法中通过传递被代理类对象来创建）；
+	3. 代理类实现接口的方法，并调用被代理类对象对应的方法。
+	
+二、动态代理设计模式
+	（一）使用JDK中的Proxy类实现动态代理（原生）———— 实现
+		1. 编写拦截器，拦截器实现InvocationHandler接口。
+		2. 拦截器和被代理类为组合关系，拦截器组合应用被代理类，在拦截器的构造方法中通过传递被代理类对象来创建拦截器对象。
+		3. 拦截器实现InvocationHandler接口的Invoke方法，在该方法中method.invoke(proxyedObject, args)以调用相应的方法。
+			/**
+			 * @param proxy是一个代理类对象；
+			 * @param method是一个被代理的类对象的方法的反射对象
+			 * @param args是该方法所需要的参数
+			 * @return 返回的是该方法调用之后的返回值
+			 */
+			@Override
+			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+				Object returnResult = method.invoke(proxyedObject, args);
+				return returnResult;
+				
+			}
+		
+		
+		Q1：如何得到代理类对象，在动态代理设计模式中，我们没有自己定义代理类？
+		A1：JDK中提供了Proxy类以供创建动态代理类对象。
+		Q2：如何创建一个动态代理类对象，需要哪些信息？
+		Q3：1. 被代理类的类加载器；2. 我们需要知道被代理类所有的接口；3. 需要我们自定义的拦截器。
+		

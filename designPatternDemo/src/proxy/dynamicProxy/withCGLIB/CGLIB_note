@@ -1,0 +1,94 @@
+CGLIB,Code Generation Library(代码生成库)————通过CGLIB实现动态代理
+	
+	CGLIB是针对实现代理，主要是对指定的类生成一个子类，以实现代理模式（无需被带离的类有接口）
+
+	Enhancer类
+		Enhancer是一个辅助类, 是CGLIB代理中用来生成代理类的一个辅助类
+
+	问题1：CGLIB动态代理设计模式和JDK中提供的Proxy的动态代理设计模式有什么异同？
+	答：
+	一、 相同点：都是用拦截器实现动态代理
+	二、 不同点：
+	JDK中提供的Proxy动态代理只能代理有接口的类，通过创建实现与被代理类相同的接口来创建代理类；
+	CGLIB是针对类的代理实现，他不需要被代理的类是否实现了接口，他通过创建该类的子类来实现代理。
+
+
+实现步骤：
+	1. 将CGLIB第三包加入到lib目录下，并且将其加入刀build path。
+	2. 创建CGLIBInterceptor拦截器，该拦截器实现了MethodInterceptor接口。
+		a. 构造方法：通过传入一个被代理的对象来创建CGLIBInterceptor对象。
+		b. 重写MethodInterceptor接口的方法intercept，它包含四个参数
+			（1. 代理类对象； 2. 被代理方法的反射对象； 3. 被代理方法的参数；4. methodPoxy对象）
+	3. 编写测试程序
+		3.1. 利用辅助类Enhancer创建代理类对象
+			a. 设置Enhancer对象的父类为代理类 setSuperclass方法
+			b. 创建回调函数 setCallback方法
+			c. 创建代理对象 create方法
+		3.2 将代理类转型为被代理的类型
+		3.3 调用需要的方法
+
+/**
+ * CGLIB 动态代理模式CGLIB拦截器示例代码：GBLIBInterceptor
+ */
+import java.lang.reflect.Method;
+import org.apache.log4j.Logger;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
+
+public class GBLIBInterceptor implements MethodInterceptor {
+	Logger logger=Logger.getLogger(GBLIBInterceptor.class.getName());
+	Object proxyedObject;//被代理类对象
+	public GBLIBInterceptor(Object proxyedObject)
+	{
+		this.proxyedObject=proxyedObject;
+	}
+	
+	public void beforeMethod(Method method)
+	{
+		logger.info(method.getName()+"被执行");
+		//System.out.println("开始执行");
+	}
+
+	public void afterMethod(Method method)
+	{
+		logger.info(method.getName()+"执行结束");
+	}
+
+	@Override
+	public Object intercept(Object arg0, Method method, Object[] arguments, MethodProxy arg3) throws Throwable {
+		this.beforeMethod(method);
+		Object result=method.invoke(proxyedObject, arguments);
+		this.afterMethod(method);
+		return result;
+	}
+}
+
+/**
+ * CGLIB 动态代理模式测试代码：
+ */
+	public static void main(String[] args) {
+		// 1. 通过需要代理的类对象来创建一个CGLIB拦截器对象
+		CGLIBInterceptor2019 cGLIBInterceptor=new CGLIBInterceptor2019
+				(new DiagramMessage());
+		
+		// 2. 创建一个Enhancer对象
+		//		Enhancer类是一个辅助类，CGLIB代理中用来生成代理类
+		Enhancer enhancer=new Enhancer();
+
+		// 3. 借助辅助类Enhancer对象，为当前辅助类设置父类（被代理的类）
+		//		或者说是，通过给被代理的类设置一个子类来实现代理模式，
+		//		该子类就是由辅助类Enhancer的一个对象充当的
+		//	3.1 为代理类设置子类对象(enhancer)
+		enhancer.setSuperclass(DiagramMessage.class);
+		//	3.1 创建回调函数
+		enhancer.setCallback(cGLIBInterceptor);
+		
+		//4. 利用辅助类对象enhancer创建一个代理类对象
+		Object $proxy=enhancer.create();
+		
+		//5. 将代理类的对象向下转型，转为被代理的类的类型【4、5步可以合并】
+		DiagramMessage obj=(DiagramMessage)$proxy;
+		
+		//6. 调用被带离的对象的方法/职责
+		obj.sendMessage("通过CGLIB实现动态代理");
+	}
